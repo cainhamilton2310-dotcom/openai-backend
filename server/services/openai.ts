@@ -98,6 +98,16 @@ Guidelines:
 - Create engaging encounters and NPCs that fit the established world
 - Keep responses between 1-3 paragraphs
 - When something significant happens, note it for future memory
+- Award experience points for meaningful player actions and achievements
+
+Experience Guidelines (award generously for good play):
+- Combat encounters: 50-200 XP based on difficulty and creativity
+- Solving puzzles/challenges: 25-100 XP
+- Good roleplay and character development: 10-50 XP
+- Discovering important information: 25-75 XP
+- Completing objectives: 100-300 XP
+- Creative problem solving: 25-100 XP
+- Social interactions and relationship building: 15-60 XP
 
 Respond in JSON format with these fields:
 - content: Your narrative response
@@ -106,7 +116,9 @@ Respond in JSON format with these fields:
 - skillCheck: string (what skill/ability is being checked)
 - combatAction: boolean (true if this initiates combat)
 - sceneUpdate: string (brief description of current scene for context)
-- memoryUpdates: array of objects with {type, key, value, importance} for new context to remember`;
+- memoryUpdates: array of objects with {type, key, value, importance} for new context to remember
+- experienceAwarded: number (XP points earned, 0 if none)
+- experienceReason: string (why XP was awarded, if any)`;
 
     let userPrompt = `Player Action: ${playerAction}
 
@@ -138,6 +150,8 @@ ${context.recentMessages.map(msg => `${msg.sender}: ${msg.content}`).join('\n')}
       combatAction: result.combatAction || false,
       sceneUpdate: result.sceneUpdate || context.currentScene,
       memoryUpdates: result.memoryUpdates || [],
+      experienceAwarded: result.experienceAwarded || 0,
+      experienceReason: result.experienceReason,
     };
   } catch (error) {
     console.error("OpenAI API error:", error);

@@ -17,6 +17,11 @@ export const characters = pgTable("characters", {
   wisdom: integer("wisdom").notNull().default(10),
   charisma: integer("charisma").notNull().default(10),
   experience: integer("experience").notNull().default(0),
+  proficiencyBonus: integer("proficiency_bonus").notNull().default(2),
+  hitDie: text("hit_die").notNull().default('d8'), // Class-based hit die
+  skillProficiencies: text("skill_proficiencies").array().default(sql`'{}'`), // Array of skill names
+  savingThrowProficiencies: text("saving_throw_proficiencies").array().default(sql`'{}'`), // Array of ability names
+  featuresUnlocked: text("features_unlocked").array().default(sql`'{}'`), // Class features by level
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -87,6 +92,41 @@ export const characterMemories = pgTable("character_memories", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Character progression tracking
+export const characterProgression = pgTable("character_progression", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  characterId: varchar("character_id").notNull().references(() => characters.id),
+  experienceGained: integer("experience_gained").notNull(),
+  experienceSource: text("experience_source").notNull(), // 'combat', 'roleplay', 'quest_completion', 'discovery'
+  sessionId: varchar("session_id").references(() => gameSessions.id),
+  description: text("description"), // What the character did to earn XP
+  timestamp: timestamp("timestamp").notNull().default(sql`now()`),
+});
+
+// Class features and abilities
+export const classFeatures = pgTable("class_features", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  className: text("class_name").notNull(),
+  level: integer("level").notNull(),
+  featureName: text("feature_name").notNull(),
+  description: text("description").notNull(),
+  featureType: text("feature_type").notNull(), // 'ability', 'spell', 'proficiency', 'improvement'
+  mechanics: jsonb("mechanics"), // Specific game mechanics data
+});
+
+// Level up history
+export const levelUps = pgTable("level_ups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  characterId: varchar("character_id").notNull().references(() => characters.id),
+  previousLevel: integer("previous_level").notNull(),
+  newLevel: integer("new_level").notNull(),
+  hitPointsGained: integer("hit_points_gained").notNull(),
+  featuresGained: text("features_gained").array().default(sql`'{}'`),
+  skillsChosen: text("skills_chosen").array().default(sql`'{}'`),
+  sessionId: varchar("session_id").references(() => gameSessions.id),
+  timestamp: timestamp("timestamp").notNull().default(sql`now()`),
+});
+
 // Insert schemas
 export const insertCharacterSchema = createInsertSchema(characters).omit({
   id: true,
@@ -124,6 +164,101 @@ export const insertCharacterMemorySchema = createInsertSchema(characterMemories)
   createdAt: true,
 });
 
+export const insertCharacterProgressionSchema = createInsertSchema(characterProgression).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertClassFeatureSchema = createInsertSchema(classFeatures).omit({
+  id: true,
+});
+
+export const insertLevelUpSchema = createInsertSchema(levelUps).omit({
+  id: true,
+  timestamp: true,
+});
+
+// Type definitions
+export type Character = typeof characters.$inferSelect;
+export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
+export type GameSession = typeof gameSessions.$inferSelect;
+export type InsertGameSession = z.infer<typeof insertGameSessionSchema>;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Inventory = typeof inventory.$inferSelect;
+export type InsertInventory = z.infer<typeof insertInventorySchema>;
+export type DiceRoll = typeof diceRolls.$inferSelect;
+export type InsertDiceRoll = z.infer<typeof insertDiceRollSchema>;
+export type SessionContext = typeof sessionContext.$inferSelect;
+export type InsertSessionContext = z.infer<typeof insertSessionContextSchema>;
+export type CharacterMemory = typeof characterMemories.$inferSelect;
+export type InsertCharacterMemory = z.infer<typeof insertCharacterMemorySchema>;
+export type CharacterProgression = typeof characterProgression.$inferSelect;
+export type InsertCharacterProgression = z.infer<typeof insertCharacterProgressionSchema>;
+export type ClassFeature = typeof classFeatures.$inferSelect;
+export type InsertClassFeature = z.infer<typeof insertClassFeatureSchema>;
+export type LevelUp = typeof levelUps.$inferSelect;
+export type InsertLevelUp = z.infer<typeof insertLevelUpSchema>;
+
+// D&D Experience thresholds (XP needed to reach each level)
+export const EXPERIENCE_THRESHOLDS = [
+  0,      // Level 1
+  300,    // Level 2
+  900,    // Level 3
+  2700,   // Level 4
+  6500,   // Level 5
+  14000,  // Level 6
+  23000,  // Level 7
+  34000,  // Level 8
+  48000,  // Level 9
+  64000,  // Level 10
+  85000,  // Level 11
+  100000, // Level 12
+  120000, // Level 13
+  140000, // Level 14
+  165000, // Level 15
+  195000, // Level 16
+  225000, // Level 17
+  265000, // Level 18
+  305000, // Level 19
+  355000, // Level 20
+];
+
+// Proficiency bonus by level
+export const getProficiencyBonus = (level: number): number => {
+  return Math.ceil(level / 4) + 1;
+};
+
+// Calculate level from experience
+export const getLevelFromExperience = (experience: number): number => {
+  for (let i = EXPERIENCE_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (experience >= EXPERIENCE_THRESHOLDS[i]) {
+      return i + 1;
+    }
+  }
+  return 1;
+};
+
+// Experience needed for next level
+export const getExperienceToNextLevel = (currentExp: number): number => {
+  const currentLevel = getLevelFromExperience(currentExp);
+  if (currentLevel >= 20) return 0; // Max level
+  return EXPERIENCE_THRESHOLDS[currentLevel] - currentExp;
+};
+
+// D&D Skills list
+export const SKILLS = [
+  'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception',
+  'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine',
+  'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion',
+  'Sleight of Hand', 'Stealth', 'Survival'
+] as const;
+
+// D&D Ability scores for saving throws
+export const ABILITY_SCORES = [
+  'strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'
+] as const;
+
 // Types
 export type Character = typeof characters.$inferSelect;
 export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
@@ -145,6 +280,15 @@ export type InsertSessionContext = z.infer<typeof insertSessionContextSchema>;
 
 export type CharacterMemory = typeof characterMemories.$inferSelect;
 export type InsertCharacterMemory = z.infer<typeof insertCharacterMemorySchema>;
+
+export type CharacterProgression = typeof characterProgression.$inferSelect;
+export type InsertCharacterProgression = z.infer<typeof insertCharacterProgressionSchema>;
+
+export type ClassFeature = typeof classFeatures.$inferSelect;
+export type InsertClassFeature = z.infer<typeof insertClassFeatureSchema>;
+
+export type LevelUp = typeof levelUps.$inferSelect;
+export type InsertLevelUp = z.infer<typeof insertLevelUpSchema>;
 
 // Game state types
 export type GameState = {

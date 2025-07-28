@@ -38,8 +38,10 @@ Preferred communication style: Simple, everyday language.
 ### 1. Character Management System
 - Character creation with customizable stats (strength, dexterity, constitution, intelligence, wisdom, charisma)
 - Support for different D&D classes (Fighter, Wizard, Rogue, etc.)
-- Health and experience tracking
+- Health and experience tracking with D&D 5e progression system
 - Character persistence across game sessions
+- Automatic leveling when experience thresholds are reached
+- Proficiency bonus calculation and hit point increases on level up
 
 ### 2. Game Session Management
 - Session-based gameplay with persistent state
@@ -54,6 +56,8 @@ Preferred communication style: Simple, everyday language.
 - **Dice Integration**: Automatic dice roll interpretation and story adaptation
 - **Persistent Memory**: Long-term character memories and session context tracking
 - **Memory Types**: Character achievements, relationships, world state, plot threads
+- **Experience System**: Automatic XP awarding for roleplay, combat, and achievements
+- **Progression Integration**: AI considers character level and unlocked abilities
 
 ### 4. Dice Rolling System
 - Support for standard D&D dice (d4, d6, d8, d10, d12, d20)
@@ -67,9 +71,17 @@ Preferred communication style: Simple, everyday language.
 - Item descriptions and metadata
 - Per-character inventory isolation
 
-### 6. Real-time Chat Interface
+### 6. Character Progression System
+- **D&D 5e Experience System**: Authentic experience thresholds and leveling mechanics
+- **Automatic Level Ups**: Characters level up when reaching XP thresholds with appropriate HP and feature gains
+- **Class Features**: Database of class abilities unlocked at different levels
+- **Proficiency Scaling**: Automatic proficiency bonus increases every 4 levels
+- **Experience Tracking**: Detailed logs of XP sources and character advancement history
+- **AI Integration**: Dungeon Master awards experience for roleplay, combat, and achievements
+
+### 7. Real-time Chat Interface
 - Message threading between player and AI DM
-- Rich message types (text, dice rolls, system messages)
+- Rich message types (text, dice rolls, system messages, level up notifications)
 - Auto-scrolling chat area
 - Quick action buttons for common D&D actions
 

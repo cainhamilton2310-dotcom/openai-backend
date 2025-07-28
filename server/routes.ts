@@ -10,6 +10,8 @@ import {
   insertDiceRollSchema,
   insertCharacterMemorySchema,
   insertSessionContextSchema,
+  insertCharacterProgressionSchema,
+  insertClassFeatureSchema,
   type GameState,
   type DiceType 
 } from "@shared/schema";
@@ -282,6 +284,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
+
+      // Award experience if any was given
+      if (dmResponse.experienceAwarded && dmResponse.experienceAwarded > 0) {
+        try {
+          const result = await storage.awardExperience(
+            characterId,
+            dmResponse.experienceAwarded,
+            "roleplay",
+            dmResponse.experienceReason,
+            sessionId
+          );
+
+          // If character leveled up, add a system message
+          if (result.leveledUp) {
+            await storage.createMessage({
+              sessionId,
+              sender: "system",
+              content: `🎉 **Level Up!** ${character.name} has reached level ${result.newLevel}! You gained additional hit points and new abilities.`,
+              messageType: "system",
+              metadata: {
+                levelUp: true,
+                newLevel: result.newLevel,
+                experienceGained: dmResponse.experienceAwarded,
+              },
+            });
+          }
+        } catch (error: any) {
+          console.warn("Failed to award experience:", error);
+        }
+      }
       
       res.json(dmResponse);
     } catch (error: any) {
@@ -365,6 +397,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(context);
     } catch (error: any) {
       res.status(500).json({ message: "Failed to fetch session context", error: error?.message });
+    }
+  });
+
+  // Progression routes
+  app.get("/api/characters/:characterId/progression", async (req, res) => {
+    try {
+      const progression = await storage.getCharacterProgression(req.params.characterId);
+      res.json(progression);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch character progression", error: error?.message });
+    }
+  });
+
+  app.post("/api/characters/:characterId/award-experience", async (req, res) => {
+    try {
+      const { amount, source, description, sessionId } = req.body;
+      
+      if (!amount || !source) {
+        return res.status(400).json({ message: "Amount and source are required" });
+      }
+
+      const result = await storage.awardExperience(
+        req.params.characterId,
+        amount,
+        source,
+        description,
+        sessionId
+      );
+      
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to award experience", error: error?.message });
+    }
+  });
+
+  app.get("/api/characters/:characterId/level-ups", async (req, res) => {
+    try {
+      const levelUps = await storage.getLevelUpsForCharacter(req.params.characterId);
+      res.json(levelUps);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch level ups", error: error?.message });
+    }
+  });
+
+  // Class features routes
+  app.get("/api/class-features/:className", async (req, res) => {
+    try {
+      const level = req.query.level ? parseInt(req.query.level as string) : undefined;
+      const features = await storage.getClassFeatures(req.params.className, level);
+      res.json(features);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch class features", error: error?.message });
+    }
+  });
+
+  app.post("/api/class-features", async (req, res) => {
+    try {
+      const validatedData = insertClassFeatureSchema.parse(req.body);
+      const feature = await storage.createClassFeature(validatedData);
+      res.json(feature);
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid class feature data", error: error?.message });
     }
   });
 

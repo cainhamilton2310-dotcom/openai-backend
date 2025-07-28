@@ -11,6 +11,7 @@ import MessageInput from "@/components/message-input";
 import SettingsModal from "@/components/settings-modal";
 import TutorialModal from "@/components/tutorial-modal";
 import MemoryPanel from "@/components/memory-panel";
+import ProgressionPanel from "@/components/progression-panel";
 import { Button } from "@/components/ui/button";
 import { Save, Settings, Crown } from "lucide-react";
 import type { GameState, Character, InsertCharacter } from "@shared/schema";
@@ -197,6 +198,7 @@ export default function Game() {
         <div className="flex-1 overflow-y-auto fantasy-scroll">
           <div className="p-4 space-y-4">
             <CharacterSheet character={gameState.character} />
+            <ProgressionPanel character={gameState.character} />
             <MemoryPanel characterId={gameState.character.id} sessionId={sessionId} />
             <InventoryPanel inventory={gameState.inventory} characterId={gameState.character.id} />
             <DiceRoller sessionId={sessionId} characterId={gameState.character.id} />
