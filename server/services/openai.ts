@@ -12,9 +12,16 @@ export interface DMResponse {
   skillCheck?: string;
   combatAction?: boolean;
   sceneUpdate?: string;
+  memoryUpdates?: Array<{
+    type: string;
+    key: string;
+    value: any;
+    importance: number;
+  }>;
 }
 
 export interface GameContext {
+  characterId: string;
   characterName: string;
   characterClass: string;
   characterLevel: number;
@@ -32,6 +39,21 @@ export interface GameContext {
     content: string;
   }>;
   sessionTitle: string;
+  sessionId: string;
+  // Enhanced memory context
+  characterMemories?: Array<{
+    type: string;
+    title: string;
+    description: string;
+    emotionalImpact: number;
+    relevanceScore: number;
+  }>;
+  sessionContext?: Array<{
+    type: string;
+    key: string;
+    value: any;
+    importance: number;
+  }>;
 }
 
 export async function generateDMResponse(
@@ -40,7 +62,23 @@ export async function generateDMResponse(
   diceRoll?: { type: string; result: number; modifier: number }
 ): Promise<DMResponse> {
   try {
-    const systemPrompt = `You are an expert Dungeon Master running a Dungeons & Dragons adventure. You are creative, engaging, and maintain story consistency.
+    // Build memory context for AI
+    let memoryContext = '';
+    if (context.characterMemories && context.characterMemories.length > 0) {
+      memoryContext += '\n\nCharacter Memories (maintain consistency with these):\n';
+      context.characterMemories.slice(0, 10).forEach(memory => {
+        memoryContext += `- ${memory.title}: ${memory.description} (Impact: ${memory.emotionalImpact})\n`;
+      });
+    }
+
+    if (context.sessionContext && context.sessionContext.length > 0) {
+      memoryContext += '\n\nSession Context (current world state):\n';
+      context.sessionContext.slice(0, 15).forEach(ctx => {
+        memoryContext += `- ${ctx.key}: ${JSON.stringify(ctx.value)} (${ctx.type}, importance: ${ctx.importance})\n`;
+      });
+    }
+
+    const systemPrompt = `You are an expert Dungeon Master running a Dungeons & Dragons adventure. You are creative, engaging, and maintain story consistency using persistent memory.
 
 Character: ${context.characterName}, Level ${context.characterLevel} ${context.characterClass}
 Stats: STR ${context.characterStats.strength}, DEX ${context.characterStats.dexterity}, CON ${context.characterStats.constitution}, INT ${context.characterStats.intelligence}, WIS ${context.characterStats.wisdom}, CHA ${context.characterStats.charisma}
@@ -48,13 +86,18 @@ Stats: STR ${context.characterStats.strength}, DEX ${context.characterStats.dext
 Current Scene: ${context.currentScene}
 Adventure: ${context.sessionTitle}
 
+${memoryContext}
+
 Guidelines:
+- Use character memories and session context to maintain consistency
+- Reference past events and relationships naturally in your responses
 - Respond to player actions with vivid, atmospheric descriptions
 - Maintain story consistency and character personalities
 - Request dice rolls when appropriate for skill checks, attacks, or saves
-- Progress the narrative based on player choices
-- Create engaging encounters and NPCs
+- Progress the narrative based on player choices and established context
+- Create engaging encounters and NPCs that fit the established world
 - Keep responses between 1-3 paragraphs
+- When something significant happens, note it for future memory
 
 Respond in JSON format with these fields:
 - content: Your narrative response
@@ -62,7 +105,8 @@ Respond in JSON format with these fields:
 - diceType: string (d20, d6, etc. if dice roll required)
 - skillCheck: string (what skill/ability is being checked)
 - combatAction: boolean (true if this initiates combat)
-- sceneUpdate: string (brief description of current scene for context)`;
+- sceneUpdate: string (brief description of current scene for context)
+- memoryUpdates: array of objects with {type, key, value, importance} for new context to remember`;
 
     let userPrompt = `Player Action: ${playerAction}
 
@@ -93,6 +137,7 @@ ${context.recentMessages.map(msg => `${msg.sender}: ${msg.content}`).join('\n')}
       skillCheck: result.skillCheck,
       combatAction: result.combatAction || false,
       sceneUpdate: result.sceneUpdate || context.currentScene,
+      memoryUpdates: result.memoryUpdates || [],
     };
   } catch (error) {
     console.error("OpenAI API error:", error);

@@ -8,8 +8,21 @@ import {
   type InventoryItem,
   type InsertInventoryItem,
   type DiceRoll,
-  type InsertDiceRoll
+  type InsertDiceRoll,
+  type SessionContext,
+  type InsertSessionContext,
+  type CharacterMemory,
+  type InsertCharacterMemory,
+  characters,
+  gameSessions,
+  messages,
+  inventory,
+  diceRolls,
+  sessionContext,
+  characterMemories
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -37,143 +50,214 @@ export interface IStorage {
   // Dice roll methods
   createDiceRoll(roll: InsertDiceRoll): Promise<DiceRoll>;
   getDiceRollsForSession(sessionId: string, limit?: number): Promise<DiceRoll[]>;
+  
+  // Memory and context methods
+  createSessionContext(context: InsertSessionContext): Promise<SessionContext>;
+  getSessionContext(sessionId: string, contextType?: string): Promise<SessionContext[]>;
+  updateSessionContext(id: string, updates: Partial<SessionContext>): Promise<SessionContext | undefined>;
+  
+  createCharacterMemory(memory: InsertCharacterMemory): Promise<CharacterMemory>;
+  getCharacterMemories(characterId: string, memoryType?: string): Promise<CharacterMemory[]>;
+  updateCharacterMemory(id: string, updates: Partial<CharacterMemory>): Promise<CharacterMemory | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private characters: Map<string, Character>;
-  private gameSessions: Map<string, GameSession>;
-  private messages: Map<string, Message>;
-  private inventory: Map<string, InventoryItem>;
-  private diceRolls: Map<string, DiceRoll>;
-
-  constructor() {
-    this.characters = new Map();
-    this.gameSessions = new Map();
-    this.messages = new Map();
-    this.inventory = new Map();
-    this.diceRolls = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getCharacter(id: string): Promise<Character | undefined> {
-    return this.characters.get(id);
+    const [character] = await db.select().from(characters).where(eq(characters.id, id));
+    return character || undefined;
   }
 
   async createCharacter(insertCharacter: InsertCharacter): Promise<Character> {
-    const id = randomUUID();
-    const character: Character = {
-      ...insertCharacter,
-      id,
-      createdAt: new Date(),
-    };
-    this.characters.set(id, character);
+    const [character] = await db
+      .insert(characters)
+      .values(insertCharacter)
+      .returning();
     return character;
   }
 
   async updateCharacter(id: string, updates: Partial<Character>): Promise<Character | undefined> {
-    const character = this.characters.get(id);
-    if (!character) return undefined;
-    
-    const updatedCharacter = { ...character, ...updates };
-    this.characters.set(id, updatedCharacter);
-    return updatedCharacter;
+    const [character] = await db
+      .update(characters)
+      .set(updates)
+      .where(eq(characters.id, id))
+      .returning();
+    return character || undefined;
   }
 
   async getGameSession(id: string): Promise<GameSession | undefined> {
-    return this.gameSessions.get(id);
+    const [session] = await db.select().from(gameSessions).where(eq(gameSessions.id, id));
+    return session || undefined;
   }
 
   async getActiveSessionForCharacter(characterId: string): Promise<GameSession | undefined> {
-    return Array.from(this.gameSessions.values()).find(
-      session => session.characterId === characterId && session.isActive
-    );
+    const [session] = await db
+      .select()
+      .from(gameSessions)
+      .where(and(eq(gameSessions.characterId, characterId), eq(gameSessions.isActive, true)))
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(1);
+    return session || undefined;
   }
 
   async createGameSession(insertSession: InsertGameSession): Promise<GameSession> {
-    const id = randomUUID();
-    const session: GameSession = {
-      ...insertSession,
-      id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.gameSessions.set(id, session);
+    // First, deactivate any existing active sessions for this character
+    await db
+      .update(gameSessions)
+      .set({ isActive: false })
+      .where(and(eq(gameSessions.characterId, insertSession.characterId), eq(gameSessions.isActive, true)));
+
+    const [session] = await db
+      .insert(gameSessions)
+      .values(insertSession)
+      .returning();
     return session;
   }
 
   async updateGameSession(id: string, updates: Partial<GameSession>): Promise<GameSession | undefined> {
-    const session = this.gameSessions.get(id);
-    if (!session) return undefined;
-    
-    const updatedSession = { ...session, ...updates, updatedAt: new Date() };
-    this.gameSessions.set(id, updatedSession);
-    return updatedSession;
+    const [session] = await db
+      .update(gameSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(gameSessions.id, id))
+      .returning();
+    return session || undefined;
   }
 
   async getMessagesForSession(sessionId: string, limit = 50): Promise<Message[]> {
-    const sessionMessages = Array.from(this.messages.values())
-      .filter(message => message.sessionId === sessionId)
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-      .slice(-limit);
+    const sessionMessages = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.sessionId, sessionId))
+      .orderBy(messages.timestamp)
+      .limit(limit);
     return sessionMessages;
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    const id = randomUUID();
-    const message: Message = {
-      ...insertMessage,
-      id,
-      timestamp: new Date(),
-    };
-    this.messages.set(id, message);
+    const [message] = await db
+      .insert(messages)
+      .values(insertMessage)
+      .returning();
     return message;
   }
 
   async getInventoryForCharacter(characterId: string): Promise<InventoryItem[]> {
-    return Array.from(this.inventory.values()).filter(
-      item => item.characterId === characterId
-    );
+    const items = await db
+      .select()
+      .from(inventory)
+      .where(eq(inventory.characterId, characterId));
+    return items;
   }
 
   async createInventoryItem(insertItem: InsertInventoryItem): Promise<InventoryItem> {
-    const id = randomUUID();
-    const item: InventoryItem = {
-      ...insertItem,
-      id,
-    };
-    this.inventory.set(id, item);
+    const [item] = await db
+      .insert(inventory)
+      .values(insertItem)
+      .returning();
     return item;
   }
 
   async updateInventoryItem(id: string, updates: Partial<InventoryItem>): Promise<InventoryItem | undefined> {
-    const item = this.inventory.get(id);
-    if (!item) return undefined;
-    
-    const updatedItem = { ...item, ...updates };
-    this.inventory.set(id, updatedItem);
-    return updatedItem;
+    const [item] = await db
+      .update(inventory)
+      .set(updates)
+      .where(eq(inventory.id, id))
+      .returning();
+    return item || undefined;
   }
 
   async deleteInventoryItem(id: string): Promise<boolean> {
-    return this.inventory.delete(id);
+    const result = await db.delete(inventory).where(eq(inventory.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async createDiceRoll(insertRoll: InsertDiceRoll): Promise<DiceRoll> {
-    const id = randomUUID();
-    const roll: DiceRoll = {
-      ...insertRoll,
-      id,
-      timestamp: new Date(),
-    };
-    this.diceRolls.set(id, roll);
+    const [roll] = await db
+      .insert(diceRolls)
+      .values(insertRoll)
+      .returning();
     return roll;
   }
 
   async getDiceRollsForSession(sessionId: string, limit = 20): Promise<DiceRoll[]> {
-    return Array.from(this.diceRolls.values())
-      .filter(roll => roll.sessionId === sessionId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit);
+    const rolls = await db
+      .select()
+      .from(diceRolls)
+      .where(eq(diceRolls.sessionId, sessionId))
+      .orderBy(desc(diceRolls.timestamp))
+      .limit(limit);
+    return rolls;
+  }
+
+  // Memory and context methods
+  async createSessionContext(insertContext: InsertSessionContext): Promise<SessionContext> {
+    const [context] = await db
+      .insert(sessionContext)
+      .values(insertContext)
+      .returning();
+    return context;
+  }
+
+  async getSessionContext(sessionId: string, contextType?: string): Promise<SessionContext[]> {
+    if (contextType) {
+      const contexts = await db
+        .select()
+        .from(sessionContext)
+        .where(and(eq(sessionContext.sessionId, sessionId), eq(sessionContext.contextType, contextType)))
+        .orderBy(desc(sessionContext.importance), desc(sessionContext.updatedAt));
+      return contexts;
+    } else {
+      const contexts = await db
+        .select()
+        .from(sessionContext)
+        .where(eq(sessionContext.sessionId, sessionId))
+        .orderBy(desc(sessionContext.importance), desc(sessionContext.updatedAt));
+      return contexts;
+    }
+  }
+
+  async updateSessionContext(id: string, updates: Partial<SessionContext>): Promise<SessionContext | undefined> {
+    const [context] = await db
+      .update(sessionContext)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(sessionContext.id, id))
+      .returning();
+    return context || undefined;
+  }
+
+  async createCharacterMemory(insertMemory: InsertCharacterMemory): Promise<CharacterMemory> {
+    const [memory] = await db
+      .insert(characterMemories)
+      .values(insertMemory)
+      .returning();
+    return memory;
+  }
+
+  async getCharacterMemories(characterId: string, memoryType?: string): Promise<CharacterMemory[]> {
+    if (memoryType) {
+      const memories = await db
+        .select()
+        .from(characterMemories)
+        .where(and(eq(characterMemories.characterId, characterId), eq(characterMemories.memoryType, memoryType)))
+        .orderBy(desc(characterMemories.relevanceScore), desc(characterMemories.createdAt));
+      return memories;
+    } else {
+      const memories = await db
+        .select()
+        .from(characterMemories)
+        .where(eq(characterMemories.characterId, characterId))
+        .orderBy(desc(characterMemories.relevanceScore), desc(characterMemories.createdAt));
+      return memories;
+    }
+  }
+
+  async updateCharacterMemory(id: string, updates: Partial<CharacterMemory>): Promise<CharacterMemory | undefined> {
+    const [memory] = await db
+      .update(characterMemories)
+      .set(updates)
+      .where(eq(characterMemories.id, id))
+      .returning();
+    return memory || undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

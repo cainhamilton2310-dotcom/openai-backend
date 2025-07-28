@@ -62,6 +62,31 @@ export const diceRolls = pgTable("dice_rolls", {
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
 });
 
+// Memory and context tracking for AI persistence
+export const sessionContext = pgTable("session_context", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => gameSessions.id),
+  contextType: text("context_type").notNull(), // 'character_memory', 'world_state', 'plot_threads', 'relationships'
+  contextKey: text("context_key").notNull(), // e.g. 'met_npc_guard', 'discovered_secret_door', 'character_trait_brave'
+  contextValue: jsonb("context_value").notNull(), // Flexible storage for any context data
+  importance: integer("importance").notNull().default(1), // 1-10 priority for AI attention
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const characterMemories = pgTable("character_memories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  characterId: varchar("character_id").notNull().references(() => characters.id),
+  memoryType: text("memory_type").notNull(), // 'achievement', 'trauma', 'relationship', 'knowledge', 'location'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  emotionalImpact: integer("emotional_impact").default(0), // -10 to +10 scale
+  relevanceScore: integer("relevance_score").notNull().default(5), // How often AI should reference this
+  tags: text("tags").array().default(sql`'{}'`), // For easy searching/filtering
+  relatedSessionId: varchar("related_session_id").references(() => gameSessions.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 // Insert schemas
 export const insertCharacterSchema = createInsertSchema(characters).omit({
   id: true,
@@ -88,6 +113,17 @@ export const insertDiceRollSchema = createInsertSchema(diceRolls).omit({
   timestamp: true,
 });
 
+export const insertSessionContextSchema = createInsertSchema(sessionContext).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCharacterMemorySchema = createInsertSchema(characterMemories).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type Character = typeof characters.$inferSelect;
 export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
@@ -103,6 +139,12 @@ export type InsertInventoryItem = z.infer<typeof insertInventorySchema>;
 
 export type DiceRoll = typeof diceRolls.$inferSelect;
 export type InsertDiceRoll = z.infer<typeof insertDiceRollSchema>;
+
+export type SessionContext = typeof sessionContext.$inferSelect;
+export type InsertSessionContext = z.infer<typeof insertSessionContextSchema>;
+
+export type CharacterMemory = typeof characterMemories.$inferSelect;
+export type InsertCharacterMemory = z.infer<typeof insertCharacterMemorySchema>;
 
 // Game state types
 export type GameState = {

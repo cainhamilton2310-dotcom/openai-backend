@@ -27,10 +27,11 @@ Preferred communication style: Simple, everyday language.
 - **Session Management**: In-memory storage (development) with plans for PostgreSQL
 
 ### Data Storage Solutions
-- **Database**: PostgreSQL (configured via Drizzle)
+- **Database**: PostgreSQL (configured via Drizzle) - ACTIVE
 - **ORM**: Drizzle ORM with Zod schema validation
-- **Current State**: In-memory storage implementation for development
+- **Current State**: Full PostgreSQL persistence with memory system
 - **Migration Strategy**: Drizzle Kit for database migrations
+- **AI Memory**: Persistent context and character memory tracking
 
 ## Key Components
 
@@ -51,6 +52,8 @@ Preferred communication style: Simple, everyday language.
 - **Context Awareness**: Maintains character stats, current scene, and message history
 - **Response Types**: Narrative responses, skill checks, combat actions
 - **Dice Integration**: Automatic dice roll interpretation and story adaptation
+- **Persistent Memory**: Long-term character memories and session context tracking
+- **Memory Types**: Character achievements, relationships, world state, plot threads
 
 ### 4. Dice Rolling System
 - Support for standard D&D dice (d4, d6, d8, d10, d12, d20)

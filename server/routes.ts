@@ -8,6 +8,8 @@ import {
   insertMessageSchema,
   insertInventorySchema,
   insertDiceRollSchema,
+  insertCharacterMemorySchema,
+  insertSessionContextSchema,
   type GameState,
   type DiceType 
 } from "@shared/schema";
@@ -20,8 +22,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertCharacterSchema.parse(req.body);
       const character = await storage.createCharacter(validatedData);
       res.json(character);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid character data", error: error.message });
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid character data", error: error?.message });
     }
   });
 
@@ -32,8 +34,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Character not found" });
       }
       res.json(character);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch character", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch character", error: error?.message });
     }
   });
 
@@ -44,8 +46,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Character not found" });
       }
       res.json(character);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update character", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to update character", error: error?.message });
     }
   });
 
@@ -55,8 +57,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertGameSessionSchema.parse(req.body);
       const session = await storage.createGameSession(validatedData);
       res.json(session);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid session data", error: error.message });
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid session data", error: error?.message });
     }
   });
 
@@ -67,8 +69,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Session not found" });
       }
       res.json(session);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch session", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch session", error: error?.message });
     }
   });
 
@@ -79,8 +81,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No active session found" });
       }
       res.json(session);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch active session", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch active session", error: error?.message });
     }
   });
 
@@ -90,8 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       const messages = await storage.getMessagesForSession(req.params.sessionId, limit);
       res.json(messages);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch messages", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch messages", error: error?.message });
     }
   });
 
@@ -103,8 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const message = await storage.createMessage(validatedData);
       res.json(message);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid message data", error: error.message });
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid message data", error: error?.message });
     }
   });
 
@@ -113,8 +115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const inventory = await storage.getInventoryForCharacter(req.params.characterId);
       res.json(inventory);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch inventory", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch inventory", error: error?.message });
     }
   });
 
@@ -126,8 +128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const item = await storage.createInventoryItem(validatedData);
       res.json(item);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid inventory item data", error: error.message });
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid inventory item data", error: error?.message });
     }
   });
 
@@ -162,8 +164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...diceRoll,
         total: result + modifier,
       });
-    } catch (error) {
-      res.status(400).json({ message: "Invalid dice roll data", error: error.message });
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid dice roll data", error: error?.message });
     }
   });
 
@@ -194,7 +196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get recent messages for context
       const recentMessages = await storage.getMessagesForSession(sessionId, 10);
       
+      // Get character memories and session context for AI persistence
+      const characterMemories = await storage.getCharacterMemories(characterId);
+      const sessionContext = await storage.getSessionContext(sessionId);
+      
       const context = {
+        characterId,
         characterName: character.name,
         characterClass: character.class,
         characterLevel: character.level,
@@ -212,6 +219,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: msg.content,
         })),
         sessionTitle: session.title,
+        sessionId,
+        characterMemories: characterMemories.map(mem => ({
+          type: mem.memoryType,
+          title: mem.title,
+          description: mem.description,
+          emotionalImpact: mem.emotionalImpact || 0,
+          relevanceScore: mem.relevanceScore,
+        })),
+        sessionContext: sessionContext.map(ctx => ({
+          type: ctx.contextType,
+          key: ctx.contextKey,
+          value: ctx.contextValue,
+          importance: ctx.importance,
+        })),
       };
       
       const dmResponse = await generateDMResponse(playerAction, context, diceRoll);
@@ -245,9 +266,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Process memory updates from AI response
+      if (dmResponse.memoryUpdates && dmResponse.memoryUpdates.length > 0) {
+        for (const memoryUpdate of dmResponse.memoryUpdates) {
+          try {
+            await storage.createSessionContext({
+              sessionId,
+              contextType: memoryUpdate.type,
+              contextKey: memoryUpdate.key,
+              contextValue: memoryUpdate.value,
+              importance: memoryUpdate.importance,
+            });
+          } catch (error: any) {
+            console.warn("Failed to save memory update:", error);
+          }
+        }
+      }
+      
       res.json(dmResponse);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to generate DM response", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to generate DM response", error: error?.message });
     }
   });
 
@@ -292,8 +330,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         session,
         initialMessage: initialScene.scene,
       });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to start adventure", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to start adventure", error: error?.message });
+    }
+  });
+
+  // Memory routes
+  app.get("/api/characters/:characterId/memories", async (req, res) => {
+    try {
+      const memories = await storage.getCharacterMemories(req.params.characterId);
+      res.json(memories);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch character memories", error: error?.message });
+    }
+  });
+
+  app.post("/api/characters/:characterId/memories", async (req, res) => {
+    try {
+      const validatedData = insertCharacterMemorySchema.parse({
+        ...req.body,
+        characterId: req.params.characterId,
+      });
+      const memory = await storage.createCharacterMemory(validatedData);
+      res.json(memory);
+    } catch (error: any) {
+      res.status(400).json({ message: "Invalid memory data", error: error?.message });
+    }
+  });
+
+  app.get("/api/sessions/:sessionId/context", async (req, res) => {
+    try {
+      const contextType = req.query.type as string | undefined;
+      const context = await storage.getSessionContext(req.params.sessionId, contextType);
+      res.json(context);
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch session context", error: error?.message });
     }
   });
 
@@ -324,8 +395,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       res.json(gameState);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch game state", error: error.message });
+    } catch (error: any) {
+      res.status(500).json({ message: "Failed to fetch game state", error: error?.message });
     }
   });
 
