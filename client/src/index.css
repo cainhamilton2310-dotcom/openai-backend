@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+
+  /* Fantasy theme colors */
+  --fantasy-gold: hsl(45, 100%, 51%);
+  --fantasy-bronze: hsl(30, 67%, 34%);
+  --fantasy-slate: hsl(215, 25%, 27%);
+  --fantasy-dark: hsl(0, 0%, 10%);
+  --fantasy-crimson: hsl(348, 83%, 47%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-fantasy-dark text-gray-100;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cinzel', serif;
+  }
+}
+
+@layer utilities {
+  .fantasy-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(30, 67%, 34%) hsl(215, 25%, 27%);
+  }
+  
+  .fantasy-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .fantasy-scroll::-webkit-scrollbar-track {
+    background: hsl(215, 25%, 27%);
+    border-radius: 4px;
+  }
+  
+  .fantasy-scroll::-webkit-scrollbar-thumb {
+    background: hsl(30, 67%, 34%);
+    border-radius: 4px;
+  }
+  
+  .fantasy-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(30, 67%, 44%);
+  }
+
+  .parchment-bg {
+    background: linear-gradient(45deg, hsl(48, 89%, 81%), hsl(48, 77%, 84%));
+    background-image: 
+      radial-gradient(circle at 20px 50px, hsla(30, 67%, 34%, 0.1) 2px, transparent 3px),
+      radial-gradient(circle at 40px 20px, hsla(30, 67%, 34%, 0.08) 1px, transparent 2px);
+  }
+
+  .dice-face {
+    background: linear-gradient(135deg, hsl(210, 20%, 98%), hsl(210, 16%, 93%));
+    border: 2px solid hsl(30, 67%, 34%);
+    box-shadow: 0 4px 8px hsla(0, 0%, 0%, 0.3);
+    color: hsl(215, 25%, 27%);
+  }
+
+  .dice-face:hover {
+    box-shadow: 0 6px 12px hsla(0, 0%, 0%, 0.4);
+    transform: scale(1.05);
+  }
+
+  .bg-fantasy-gold {
+    background-color: hsl(45, 100%, 51%);
+  }
+
+  .bg-fantasy-bronze {
+    background-color: hsl(30, 67%, 34%);
+  }
+
+  .bg-fantasy-slate {
+    background-color: hsl(215, 25%, 27%);
+  }
+
+  .bg-fantasy-dark {
+    background-color: hsl(0, 0%, 10%);
+  }
+
+  .bg-fantasy-crimson {
+    background-color: hsl(348, 83%, 47%);
+  }
+
+  .text-fantasy-gold {
+    color: hsl(45, 100%, 51%);
+  }
+
+  .text-fantasy-bronze {
+    color: hsl(30, 67%, 34%);
+  }
+
+  .text-fantasy-slate {
+    color: hsl(215, 25%, 27%);
+  }
+
+  .text-fantasy-dark {
+    color: hsl(0, 0%, 10%);
+  }
+
+  .text-fantasy-crimson {
+    color: hsl(348, 83%, 47%);
+  }
+
+  .border-fantasy-gold {
+    border-color: hsl(45, 100%, 51%);
+  }
+
+  .border-fantasy-bronze {
+    border-color: hsl(30, 67%, 34%);
+  }
+
+  .border-fantasy-slate {
+    border-color: hsl(215, 25%, 27%);
+  }
+
+  .border-fantasy-crimson {
+    border-color: hsl(348, 83%, 47%);
+  }
+
+  @keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    0% { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-dice-roll {
+    animation: diceRoll 1s ease-in-out;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+}
