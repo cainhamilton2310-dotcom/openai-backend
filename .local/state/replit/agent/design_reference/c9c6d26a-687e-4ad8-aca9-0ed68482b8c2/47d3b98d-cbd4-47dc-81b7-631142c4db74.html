@@ -1,0 +1,632 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI DM - Dungeons & Dragons Roleplay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    'cinzel': ['Cinzel', 'serif'],
+                    'inter': ['Inter', 'sans-serif'],
+                    'mono': ['JetBrains Mono', 'monospace']
+                },
+                colors: {
+                    'fantasy': {
+                        'gold': '#D69E2E',
+                        'bronze': '#8B4513',
+                        'slate': '#2D3748',
+                        'dark': '#1A1A1A',
+                        'crimson': '#E53E3E'
+                    }
+                },
+                animation: {
+                    'dice-roll': 'diceRoll 1s ease-in-out',
+                    'fade-in': 'fadeIn 0.3s ease-in-out',
+                    'slide-up': 'slideUp 0.3s ease-out'
+                },
+                keyframes: {
+                    diceRoll: {
+                        '0%': { transform: 'rotate(0deg) scale(1)' },
+                        '50%': { transform: 'rotate(180deg) scale(1.2)' },
+                        '100%': { transform: 'rotate(360deg) scale(1)' }
+                    },
+                    fadeIn: {
+                        '0%': { opacity: '0' },
+                        '100%': { opacity: '1' }
+                    },
+                    slideUp: {
+                        '0%': { transform: 'translateY(10px)', opacity: '0' },
+                        '100%': { transform: 'translateY(0)', opacity: '1' }
+                    }
+                }
+            }
+        }
+    };
+    </script>
+
+    <style>
+        .fantasy-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #8B4513 #2D3748;
+        }
+        
+        .fantasy-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .fantasy-scroll::-webkit-scrollbar-track {
+            background: #2D3748;
+            border-radius: 4px;
+        }
+        
+        .fantasy-scroll::-webkit-scrollbar-thumb {
+            background: #8B4513;
+            border-radius: 4px;
+        }
+        
+        .fantasy-scroll::-webkit-scrollbar-thumb:hover {
+            background: #A0522D;
+        }
+
+        .parchment-bg {
+            background: linear-gradient(45deg, #F7E6A3, #F4E4BC);
+            background-image: 
+                radial-gradient(circle at 20px 50px, rgba(139, 69, 19, 0.1) 2px, transparent 3px),
+                radial-gradient(circle at 40px 20px, rgba(139, 69, 19, 0.08) 1px, transparent 2px);
+        }
+
+        .dice-face {
+            background: linear-gradient(135deg, #F7FAFC, #E2E8F0);
+            border: 2px solid #8B4513;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+
+<body class="bg-fantasy-dark text-gray-100 font-inter overflow-hidden">
+    <!-- @COMPONENT: MainLayout -->
+    <div class="flex h-screen">
+        <!-- @COMPONENT: Sidebar -->
+        <div class="w-80 bg-fantasy-slate border-r border-fantasy-bronze flex flex-col">
+            <!-- Header -->
+            <div class="p-4 border-b border-fantasy-bronze">
+                <h1 class="text-2xl font-cinzel font-bold text-fantasy-gold flex items-center">
+                    <i class="fas fa-dragon mr-3"></i>
+                    AI Dungeon Master
+                </h1>
+                <p class="text-gray-400 text-sm mt-1">Epic Adventures Await</p>
+            </div>
+
+            <!-- Character Sheet Panel -->
+            <div class="flex-1 overflow-y-auto fantasy-scroll">
+                <!-- @COMPONENT: CharacterSheet -->
+                <div class="p-4">
+                    <div class="bg-fantasy-dark rounded-lg border border-fantasy-bronze p-4 mb-4">
+                        <div class="flex items-center mb-4">
+                            <!-- Character avatar placeholder -->
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-fantasy-gold to-fantasy-bronze flex items-center justify-center mr-4">
+                                <i class="fas fa-user text-2xl text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-cinzel font-semibold text-fantasy-gold" data-bind="character.name">Aragorn Nightblade</h3>
+                                <p class="text-gray-400 text-sm" data-bind="character.class">Human Ranger - Level 3</p>
+                            </div>
+                        </div>
+
+                        <!-- Health Bar -->
+                        <div class="mb-4">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Health</span>
+                                <span data-bind="character.health">28/35</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-3">
+                                <div class="bg-gradient-to-r from-fantasy-crimson to-red-500 h-3 rounded-full" style="width: 80%" data-bind-style="width: character.healthPercent"></div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-gray-800 rounded p-3 text-center" data-mock="true">
+                                <div class="text-2xl font-mono font-bold text-fantasy-gold">16</div>
+                                <div class="text-xs text-gray-400">STR</div>
+                            </div>
+                            <div class="bg-gray-800 rounded p-3 text-center" data-mock="true">
+                                <div class="text-2xl font-mono font-bold text-fantasy-gold">18</div>
+                                <div class="text-xs text-gray-400">DEX</div>
+                            </div>
+                            <div class="bg-gray-800 rounded p-3 text-center" data-mock="true">
+                                <div class="text-2xl font-mono font-bold text-fantasy-gold">14</div>
+                                <div class="text-xs text-gray-400">CON</div>
+                            </div>
+                            <div class="bg-gray-800 rounded p-3 text-center" data-mock="true">
+                                <div class="text-2xl font-mono font-bold text-fantasy-gold">13</div>
+                                <div class="text-xs text-gray-400">INT</div>
+                            </div>
+                            <div class="bg-gray-800 rounded p-3 text-center" data-mock="true">
+                                <div class="text-2xl font-mono font-bold text-fantasy-gold">15</div>
+                                <div class="text-xs text-gray-400">WIS</div>
+                            </div>
+                            <div class="bg-gray-800 rounded p-3 text-center" data-mock="true">
+                                <div class="text-2xl font-mono font-bold text-fantasy-gold">12</div>
+                                <div class="text-xs text-gray-400">CHA</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- @COMPONENT: InventoryPanel -->
+                    <div class="bg-fantasy-dark rounded-lg border border-fantasy-bronze p-4 mb-4">
+                        <h4 class="font-cinzel font-semibold text-fantasy-gold mb-3 flex items-center">
+                            <i class="fas fa-backpack mr-2"></i>
+                            Inventory
+                        </h4>
+                        <div class="grid grid-cols-4 gap-2">
+                            <!-- @MAP: inventory.items.map(item => ( -->
+                            <div class="bg-gray-800 border border-gray-600 rounded p-2 text-center hover:bg-gray-700 cursor-pointer transition-colors" data-mock="true">
+                                <i class="fas fa-sword text-fantasy-gold text-lg mb-1"></i>
+                                <div class="text-xs">Longsword</div>
+                            </div>
+                            <div class="bg-gray-800 border border-gray-600 rounded p-2 text-center hover:bg-gray-700 cursor-pointer transition-colors" data-mock="true">
+                                <i class="fas fa-shield text-blue-400 text-lg mb-1"></i>
+                                <div class="text-xs">Shield</div>
+                            </div>
+                            <div class="bg-gray-800 border border-gray-600 rounded p-2 text-center hover:bg-gray-700 cursor-pointer transition-colors" data-mock="true">
+                                <i class="fas fa-flask text-red-400 text-lg mb-1"></i>
+                                <div class="text-xs">Potion</div>
+                            </div>
+                            <div class="bg-gray-800 border border-gray-600 rounded p-2 text-center hover:bg-gray-700 cursor-pointer transition-colors" data-mock="true">
+                                <i class="fas fa-bow-arrow text-brown-400 text-lg mb-1"></i>
+                                <div class="text-xs">Bow</div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                            <!-- Empty slots -->
+                            <div class="bg-gray-900 border border-gray-700 rounded p-2 border-dashed opacity-50 h-12"></div>
+                            <div class="bg-gray-900 border border-gray-700 rounded p-2 border-dashed opacity-50 h-12"></div>
+                            <div class="bg-gray-900 border border-gray-700 rounded p-2 border-dashed opacity-50 h-12"></div>
+                            <div class="bg-gray-900 border border-gray-700 rounded p-2 border-dashed opacity-50 h-12"></div>
+                        </div>
+                    </div>
+
+                    <!-- @COMPONENT: DiceRoller -->
+                    <div class="bg-fantasy-dark rounded-lg border border-fantasy-bronze p-4">
+                        <h4 class="font-cinzel font-semibold text-fantasy-gold mb-3 flex items-center">
+                            <i class="fas fa-dice-d20 mr-2"></i>
+                            Dice Roller
+                        </h4>
+                        <div class="grid grid-cols-3 gap-2 mb-4">
+                            <button class="dice-face rounded-lg p-2 flex flex-col items-center hover:shadow-lg transition-all duration-200 hover:scale-105" data-event="click:rollDice" data-dice="d4">
+                                <i class="fas fa-dice-d4 text-xl mb-1"></i>
+                                <span class="text-xs">d4</span>
+                            </button>
+                            <button class="dice-face rounded-lg p-2 flex flex-col items-center hover:shadow-lg transition-all duration-200 hover:scale-105" data-event="click:rollDice" data-dice="d6">
+                                <i class="fas fa-dice-d6 text-xl mb-1"></i>
+                                <span class="text-xs">d6</span>
+                            </button>
+                            <button class="dice-face rounded-lg p-2 flex flex-col items-center hover:shadow-lg transition-all duration-200 hover:scale-105" data-event="click:rollDice" data-dice="d8">
+                                <i class="fas fa-dice-d8 text-xl mb-1"></i>
+                                <span class="text-xs">d8</span>
+                            </button>
+                            <button class="dice-face rounded-lg p-2 flex flex-col items-center hover:shadow-lg transition-all duration-200 hover:scale-105" data-event="click:rollDice" data-dice="d10">
+                                <i class="fas fa-dice-d10 text-xl mb-1"></i>
+                                <span class="text-xs">d10</span>
+                            </button>
+                            <button class="dice-face rounded-lg p-2 flex flex-col items-center hover:shadow-lg transition-all duration-200 hover:scale-105" data-event="click:rollDice" data-dice="d12">
+                                <i class="fas fa-dice-d12 text-xl mb-1"></i>
+                                <span class="text-xs">d12</span>
+                            </button>
+                            <button class="dice-face rounded-lg p-2 flex flex-col items-center hover:shadow-lg transition-all duration-200 hover:scale-105" data-event="click:rollDice" data-dice="d20">
+                                <i class="fas fa-dice-d20 text-xl mb-1"></i>
+                                <span class="text-xs">d20</span>
+                            </button>
+                        </div>
+                        <!-- Roll Result Display -->
+                        <div id="rollResult" class="bg-gray-800 rounded p-3 text-center hidden" data-bind="diceRoll.result">
+                            <div class="text-2xl font-mono font-bold text-fantasy-gold">18</div>
+                            <div class="text-sm text-gray-400">d20 Roll</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- @COMPONENT: MainContent -->
+        <div class="flex-1 flex flex-col">
+            <!-- Adventure Header -->
+            <div class="bg-fantasy-slate border-b border-fantasy-bronze p-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-cinzel font-semibold text-fantasy-gold">The Cursed Ruins of Shadowmere</h2>
+                        <p class="text-gray-400 text-sm">Chapter 1: The Mysterious Village</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button class="bg-fantasy-bronze hover:bg-opacity-80 px-4 py-2 rounded-lg transition-colors flex items-center" data-event="click:saveAdventure">
+                            <i class="fas fa-save mr-2"></i>
+                            Save
+                        </button>
+                        <button class="bg-fantasy-gold text-fantasy-dark hover:bg-opacity-80 px-4 py-2 rounded-lg transition-colors flex items-center" data-event="click:openSettings">
+                            <i class="fas fa-cog mr-2"></i>
+                            Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- @COMPONENT: ChatArea -->
+            <div class="flex-1 overflow-y-auto fantasy-scroll p-4" id="chatContainer">
+                <!-- DM Messages -->
+                <div class="mb-6 animate-fade-in">
+                    <div class="flex items-start">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-crown text-fantasy-gold"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-800 rounded-lg p-4 max-w-4xl">
+                                <div class="flex items-center mb-2">
+                                    <span class="font-semibold text-purple-400">Dungeon Master</span>
+                                    <span class="text-gray-500 text-xs ml-2">2:34 PM</span>
+                                </div>
+                                <p class="text-gray-200 leading-relaxed" data-mock="true">
+                                    As you approach the ancient village of Shadowmere, a thick mist begins to roll in from the surrounding hills. 
+                                    The cobblestone path beneath your feet is cracked and overgrown with strange, luminescent moss that seems to 
+                                    pulse with an otherworldly energy. In the distance, you can make out the silhouettes of abandoned buildings, 
+                                    their windows dark and empty like hollow eyes watching your every move.
+                                </p>
+                                <p class="text-gray-200 leading-relaxed mt-3" data-mock="true">
+                                    What would you like to do?
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player Message -->
+                <div class="mb-6 animate-fade-in">
+                    <div class="flex items-start justify-end">
+                        <div class="flex-1 flex justify-end">
+                            <div class="bg-fantasy-bronze rounded-lg p-4 max-w-2xl">
+                                <div class="flex items-center justify-end mb-2">
+                                    <span class="text-gray-400 text-xs mr-2">2:35 PM</span>
+                                    <span class="font-semibold text-fantasy-gold">Aragorn Nightblade</span>
+                                </div>
+                                <p class="text-gray-100 leading-relaxed" data-mock="true">
+                                    I draw my bow and nock an arrow, staying alert as I slowly advance toward the village. 
+                                    I want to examine the glowing moss more closely - does it seem magical or dangerous?
+                                </p>
+                            </div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-fantasy-gold to-fantasy-bronze flex items-center justify-center ml-3 flex-shrink-0">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dice Roll Message -->
+                <div class="mb-6 animate-fade-in">
+                    <div class="flex justify-center">
+                        <div class="bg-fantasy-slate border border-fantasy-bronze rounded-lg p-3 flex items-center">
+                            <i class="fas fa-dice-d20 text-fantasy-gold text-lg mr-3"></i>
+                            <span class="text-gray-300" data-mock="true">
+                                <strong>Aragorn Nightblade</strong> rolled <strong class="text-fantasy-gold">15</strong> for Nature Check (d20 + 3)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DM Response -->
+                <div class="mb-6 animate-fade-in">
+                    <div class="flex items-start">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-crown text-fantasy-gold"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-gray-800 rounded-lg p-4 max-w-4xl">
+                                <div class="flex items-center mb-2">
+                                    <span class="font-semibold text-purple-400">Dungeon Master</span>
+                                    <span class="text-gray-500 text-xs ml-2">2:36 PM</span>
+                                </div>
+                                <p class="text-gray-200 leading-relaxed" data-mock="true">
+                                    Your keen ranger instincts tell you that this moss is definitely magical in nature. The pulsing rhythm 
+                                    matches that of a heartbeat, and you sense a faint necromantic aura emanating from it. As you approach 
+                                    with your bow ready, you notice that the moss seems to react to your presence, growing slightly brighter.
+                                </p>
+                                <p class="text-gray-200 leading-relaxed mt-3" data-mock="true">
+                                    Suddenly, you hear the sound of footsteps echoing from one of the nearby buildings. Roll for Perception.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Combat Initiative Tracker (when in combat) -->
+                <div class="mb-6 bg-fantasy-crimson bg-opacity-20 border border-fantasy-crimson rounded-lg p-4 hidden" id="combatTracker">
+                    <h4 class="font-cinzel font-semibold text-fantasy-crimson mb-3 flex items-center">
+                        <i class="fas fa-sword mr-2"></i>
+                        Combat - Round 1
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center bg-fantasy-dark rounded p-2" data-mock="true">
+                            <span class="text-fantasy-gold font-semibold">Aragorn Nightblade</span>
+                            <span class="text-gray-400">Initiative: 18</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-800 rounded p-2" data-mock="true">
+                            <span class="text-red-400">Shadow Wraith</span>
+                            <span class="text-gray-400">Initiative: 12</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- @COMPONENT: MessageInput -->
+            <div class="border-t border-fantasy-bronze p-4">
+                <div class="flex space-x-3">
+                    <div class="flex-1">
+                        <textarea 
+                            class="w-full bg-fantasy-slate border border-fantasy-bronze rounded-lg p-3 text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-fantasy-gold focus:border-transparent"
+                            placeholder="Describe your action..."
+                            rows="2"
+                            data-bind="messageInput"
+                            data-implementation="Should support multiline input and auto-resize"
+                        ></textarea>
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <button class="bg-fantasy-gold text-fantasy-dark hover:bg-opacity-80 px-6 py-3 rounded-lg font-semibold transition-colors flex items-center" data-event="click:sendMessage">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Send
+                        </button>
+                        <button class="bg-fantasy-slate border border-fantasy-bronze hover:bg-gray-700 px-6 py-2 rounded-lg text-sm transition-colors flex items-center" data-event="click:rollQuickDice">
+                            <i class="fas fa-dice mr-2"></i>
+                            Quick d20
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions Bar -->
+                <div class="flex space-x-2 mt-3">
+                    <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors" data-event="click:quickAction" data-action="attack">
+                        ⚔️ Attack
+                    </button>
+                    <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors" data-event="click:quickAction" data-action="investigate">
+                        🔍 Investigate
+                    </button>
+                    <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors" data-event="click:quickAction" data-action="cast-spell">
+                        ✨ Cast Spell
+                    </button>
+                    <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors" data-event="click:quickAction" data-action="hide">
+                        🥷 Hide
+                    </button>
+                    <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm transition-colors" data-event="click:quickAction" data-action="help">
+                        🆘 Help
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MainContent -->
+    </div>
+    <!-- @END_COMPONENT: MainLayout -->
+
+    <!-- @COMPONENT: Modal for Settings/Character Creation -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-fantasy-slate border border-fantasy-bronze rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto fantasy-scroll">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-cinzel font-bold text-fantasy-gold">Adventure Settings</h3>
+                    <button class="text-gray-400 hover:text-gray-200 text-2xl" data-event="click:closeModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- AI Settings -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-fantasy-gold mb-3">AI Dungeon Master</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Storytelling Style</label>
+                                <select class="w-full bg-fantasy-dark border border-fantasy-bronze rounded p-2 text-gray-100">
+                                    <option>Descriptive & Atmospheric</option>
+                                    <option>Action-Packed</option>
+                                    <option>Roleplay Focused</option>
+                                    <option>Comedy & Light-hearted</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Difficulty Level</label>
+                                <select class="w-full bg-fantasy-dark border border-fantasy-bronze rounded p-2 text-gray-100">
+                                    <option>Beginner Friendly</option>
+                                    <option>Balanced</option>
+                                    <option>Challenging</option>
+                                    <option>Hardcore</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Character Creation/Edit -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-fantasy-gold mb-3">Character Settings</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Character Name</label>
+                                <input type="text" class="w-full bg-fantasy-dark border border-fantasy-bronze rounded p-2 text-gray-100" placeholder="Enter name..." data-bind="character.name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">Class</label>
+                                <select class="w-full bg-fantasy-dark border border-fantasy-bronze rounded p-2 text-gray-100" data-bind="character.class">
+                                    <option>Fighter</option>
+                                    <option>Wizard</option>
+                                    <option>Rogue</option>
+                                    <option>Cleric</option>
+                                    <option>Ranger</option>
+                                    <option>Barbarian</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Configuration -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-fantasy-gold mb-3">API Configuration</h4>
+                        <p class="text-sm text-gray-400 mb-3">Configure your OpenAI API connection for AI responses.</p>
+                        <div class="bg-fantasy-dark border border-fantasy-bronze rounded p-4">
+                            <div class="flex items-center text-green-400 mb-2">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Connected to OpenAI API
+                            </div>
+                            <p class="text-xs text-gray-500">Using GPT-4 for enhanced storytelling</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-8">
+                    <button class="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-lg transition-colors" data-event="click:closeModal">
+                        Cancel
+                    </button>
+                    <button class="bg-fantasy-gold text-fantasy-dark hover:bg-opacity-80 px-6 py-2 rounded-lg font-semibold transition-colors" data-event="click:saveSettings">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: Modal -->
+
+    <!-- @COMPONENT: Tutorial/Getting Started Modal -->
+    <div id="tutorialModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-fantasy-slate border border-fantasy-bronze rounded-lg max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto fantasy-scroll">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-cinzel font-bold text-fantasy-gold">Welcome to AI Dungeon Master!</h3>
+                    <button class="text-gray-400 hover:text-gray-200 text-2xl" data-event="click:closeTutorial">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="parchment-bg rounded-lg p-6 text-fantasy-dark">
+                        <h4 class="text-xl font-cinzel font-bold mb-4">Getting Started Guide</h4>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="bg-fantasy-bronze text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 mt-1 flex-shrink-0">1</div>
+                                <div>
+                                    <h5 class="font-semibold mb-1">Create Your Character</h5>
+                                    <p class="text-sm">Customize your character's name, class, and stats using the character sheet panel.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="bg-fantasy-bronze text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 mt-1 flex-shrink-0">2</div>
+                                <div>
+                                    <h5 class="font-semibold mb-1">Read the Story</h5>
+                                    <p class="text-sm">The AI Dungeon Master will set the scene and describe your surroundings in the chat area.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="bg-fantasy-bronze text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 mt-1 flex-shrink-0">3</div>
+                                <div>
+                                    <h5 class="font-semibold mb-1">Describe Your Actions</h5>
+                                    <p class="text-sm">Type what you want to do in the message box. Be creative and descriptive!</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="bg-fantasy-bronze text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 mt-1 flex-shrink-0">4</div>
+                                <div>
+                                    <h5 class="font-semibold mb-1">Roll Dice</h5>
+                                    <p class="text-sm">Use the dice roller for skill checks, attacks, and other game mechanics.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="bg-fantasy-bronze text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 mt-1 flex-shrink-0">5</div>
+                                <div>
+                                    <h5 class="font-semibold mb-1">Manage Inventory</h5>
+                                    <p class="text-sm">Track your equipment and items in the inventory panel.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-fantasy-dark border border-fantasy-bronze rounded-lg p-4">
+                        <h5 class="font-semibold text-fantasy-gold mb-2">Pro Tips:</h5>
+                        <ul class="text-sm text-gray-300 space-y-1">
+                            <li>• Use quick action buttons for common actions</li>
+                            <li>• Your character's stats affect dice roll bonuses</li>
+                            <li>• The AI remembers your previous actions and story events</li>
+                            <li>• Save your adventure regularly to preserve progress</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex justify-center mt-8">
+                    <button class="bg-fantasy-gold text-fantasy-dark hover:bg-opacity-80 px-8 py-3 rounded-lg font-semibold transition-colors" data-event="click:startAdventure">
+                        Start My Adventure!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: Tutorial Modal -->
+
+    <script>
+    (function() {
+        // @FUNCTIONALITY: This should implement dice rolling with visual feedback and API integration
+        // @STATE: gameState:object = { character: {}, inventory: [], chatHistory: [], currentScene: {} }
+        
+        // TODO: Implement OpenAI API integration for DM responses
+        // TODO: Implement character persistence and save/load functionality
+        // TODO: Implement real-time dice rolling with animations
+        // TODO: Implement combat system with turn tracking
+        // TODO: Implement inventory management with drag-and-drop
+        
+        // Basic UI interactions for demo purposes
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal controls
+            const settingsModal = document.getElementById('settingsModal');
+            const tutorialModal = document.getElementById('tutorialModal');
+            
+            // Show tutorial on first visit (would check localStorage in real implementation)
+            setTimeout(() => {
+                tutorialModal.classList.remove('hidden');
+            }, 1000);
+            
+            // Basic dice rolling animation
+            document.querySelectorAll('[data-dice]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const dice = this.getAttribute('data-dice');
+                    const icon = this.querySelector('i');
+                    
+                    // Add rolling animation
+                    icon.style.animation = 'diceRoll 1s ease-in-out';
+                    
+                    setTimeout(() => {
+                        icon.style.animation = '';
+                        // TODO: Show actual dice result
+                        console.log(`Rolling ${dice}`);
+                    }, 1000);
+                });
+            });
+            
+            // Auto-scroll chat to bottom
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Textarea auto-resize
+            document.querySelector('textarea').addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        });
+    })();
+    </script>
+</body>
+</html>
